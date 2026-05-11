@@ -1,0 +1,51 @@
+syntax = "proto3";
+
+package fpga_exchange;
+
+enum MessageType {
+  Market_Data = 0;
+  Order = 1;
+}
+
+enum Side {
+  Buy = 0;
+  Sell = 1;
+}
+
+message Packet {
+  uint32 packet_id = 1;
+  uint64 created_cycle = 2;
+  MessageType msg_type = 3;
+  uint32 symbol_id = 4;
+  uint32 seq = 5;
+  Side side = 6;
+  uint32 price = 7;
+  uint32 qty = 8;
+}
+
+message DmaDescriptor {
+  uint32 desc_id = 1;
+  uint64 sub_cycle = 2;
+  Packet packet = 3;
+}
+
+message PacketTrace {
+  repeated Packet packets = 1;
+}
+
+message DmaTrace {
+  repeated DmaDescriptor descriptors = 1;
+}
+
+message OutputEvent {
+  uint32 packet_id = 1;
+  uint64 created_cycle = 2;
+  uint64 output_cycle = 3;
+  uint32 action = 4;
+  uint32 flags = 5;
+  uint64 latency = 6;
+}
+
+message OutputTrace {
+  repeated OutputEvent events = 1;
+}
