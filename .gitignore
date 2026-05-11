@@ -1,2 +1,28 @@
-#python
+# Python
 __pycache__/
+*.py[cod]
+.pytest_cache/
+venv/
+.venv/
+
+# Generated protobuf bindings
+pb_scripts/packet_pb2.py
+sim_cpp/cpp_pb/packet.pb.cc
+sim_cpp/cpp_pb/packet.pb.h
+
+# Generated traces and results
+binary_traces/*.pb
+results/*.csv
+
+# Build outputs
+build/
+sim_cpp/build/
+rust_runtime/target/
+obj_dir/
+
+# Waveforms
+*.vcd
+
+# Local editor/OS files
+.DS_Store
+Thumbs.db
