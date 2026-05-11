@@ -8,38 +8,93 @@ resulting decisions and latency.
 ## Architecture
 
 ```text
-proto/packet.proto
-    |                     |
-    | prost-build         | protoc --cpp_out
-    v                     v
-Rust protobuf types   sim_cpp/cpp_pb/*
-    |                     |
-    v                     v
-python_module/gen_trace_proto.py
-    |
-    v
-binary_traces/packets.pb
-    |
-    v
-rust_runtime/src/main.rs
-    |
-    v
-binary_traces/sim_input.pb
-    |
-    v
-sim_cpp/main.cpp  --->  Verilated rtl/stage_transform.sv
-    |                         |
-    +-------------------------+
-              |
-              v
-results/output.csv
-sim_cpp/build/waves/stage_transform.vcd
-              |
-              v
-python_module/check_results.py
-              |
-              v
-PASS / FAIL
+python trace generator
+  -> binary_traces/packets.pb
+
+Rust runtime
+  -> binary_traces/sim_input.pb
+
+C++ Verilator harness + SystemVerilog RTL
+  -> results/output.csv
+  -> sim_cpp/build/waves/stage_transform.vcd
+
+Python checker
+  -> pass/fail validation
+```
+
+```text
+                         +-----------------------------+
+                         |      proto/packet.proto     |
+                         | shared Packet / DMA schema  |
+                         +--------------+--------------+
+                                        |
+                  +---------------------+----------------------+
+                  |                                            |
+                  v                                            v
+        +--------------------+                    +--------------------------+
+        | Rust prost-build   |                    | protoc --cpp_out        |
+        | generated types    |                    | sim_cpp/cpp_pb/*.cc/.h  |
+        +----------+---------+                    +------------+-------------+
+                   |                                           |
+                   v                                           v
+
++-----------------------------+      +-----------------------------+
+| python_module/              |      | rust_runtime/src/main.rs    |
+| gen_trace_proto.py          |      |                             |
+|                             |      | reads PacketTrace           |
+| creates fixed test packets  +----->+ wraps packets as            |
+|                             |      | DmaDescriptor records       |
++--------------+--------------+      +--------------+--------------+
+               |                                    |
+               v                                    v
++-----------------------------+      +-----------------------------+
+| binary_traces/packets.pb    |      | binary_traces/sim_input.pb  |
+| PacketTrace                 |      | DmaTrace                    |
++-----------------------------+      +--------------+--------------+
+                                                   |
+                                                   v
+                                      +-----------------------------+
+                                      | sim_cpp/main.cpp            |
+                                      | Verilator C++ harness       |
+                                      |                             |
+                                      | reads sim_input.pb          |
+                                      | drives ready/valid inputs   |
+                                      | applies output stalls       |
+                                      +--------------+--------------+
+                                                     |
+                                                     v
+                                      +-----------------------------+
+                                      | rtl/stage_transform.sv      |
+                                      | Verilated as Vstage_transform|
+                                      |                             |
+                                      | market-data filter          |
+                                      | sequence-gap check          |
+                                      | order risk check            |
+                                      | ready/valid backpressure    |
+                                      +--------------+--------------+
+                                                     |
+                         +---------------------------+---------------------------+
+                         |                                                       |
+                         v                                                       v
+          +-----------------------------+                         +-----------------------------+
+          | results/output.csv          |                         | sim_cpp/build/waves/        |
+          | actions, flags, latency     |                         | stage_transform.vcd         |
+          +--------------+--------------+                         | waveform trace              |
+                         |                                        +-----------------------------+
+                         v
+          +-----------------------------+
+          | python_module/              |
+          | check_results.py            |
+          |                             |
+          | validates expected actions, |
+          | flags, packet presence,     |
+          | and latency invariants      |
+          +--------------+--------------+
+                         |
+                         v
+                  +-------------+
+                  | PASS / FAIL |
+                  +-------------+
 ```
 
 ## Main Flow
