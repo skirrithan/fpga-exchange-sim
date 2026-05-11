@@ -203,3 +203,45 @@ make clean
   the current build.
 - `python_module/sim_step1.py` is a standalone Python toy model and is not used
   by the current build.
+
+## Dependencies
+
+Required tools:
+
+- `make`
+- Python 3
+- Rust and Cargo
+- `protoc`, the Protocol Buffers compiler
+- C++ compiler toolchain
+- Verilator
+- protobuf C++ development library
+
+## Running
+
+Run the complete simulation and validation flow:
+
+```sh
+make all
+```
+
+Run individual stages:
+
+```sh
+make trace      # generate binary_traces/packets.pb
+make rust       # generate binary_traces/sim_input.pb
+make cpp_proto  # generate C++ protobuf bindings
+make build      # build the Verilated simulator
+make run        # run the simulator
+make check      # validate results/output.csv
+```
+
+Clean generated artifacts:
+
+```sh
+make clean
+```
+
+After a successful run, inspect:
+
+- `results/output.csv` for packet decisions and latency.
+- `sim_cpp/build/waves/stage_transform.vcd` for waveform debugging.
